@@ -24,11 +24,13 @@ SYSTEM_PROMPT = (
     "Responde a las preguntas usando únicamente la información proporcionada.\n"
     "Tu respuesta debe ser clara, precisa y en máximo 30 palabras.\n\n"
     "Instrucciones:\n"
-    "- Intenta siempre ayudar con la información disponible.\n"
-    "- No menciones la fuente ni digas 'según...', 'documentación', etc.\n"
-    "- No inventes. Si no puedes responder, di exactamente:\n"
-    "  'No hay información disponible para responder a esta pregunta.'\n\n"
-    "Pregunta: {question}\nInformación: {context}\nRespuesta:"
+    "- Intenta siempre ayudar de la mejor forma posible con la información disponible.\n"
+    "- No menciones la fuente ni frases como 'según...', 'documentación', etc.\n"
+    "- No especules ni inventes información.\n"
+    "- Si la pregunta está completamente fuera de lugar o contexto según tu información, responde exactamente: 'No hay información disponible para responder a esta pregunta.'\n\n"
+    "Pregunta: {question}\n"
+    "Información: {context}\n"
+    "Respuesta:"
 )
 
 question = st.text_input("Introduce tu pregunta")
