@@ -46,16 +46,16 @@ SYSTEM_PROMPT = (
 
 with st.form("rag_form"):
     question = st.text_input("Pregunta")
-    k = st.slider("Fragmentos a recuperar", 1, 10, 4)
+    k = st.slider("Fragmentos a recuperar", 1, 20, 4)
     submitted = st.form_submit_button("Consultar")
 
 if submitted and question.strip():
-    with st.spinner("🔎 Buscando respuesta..."):
+    with st.spinner("Buscando respuesta..."): 
         start = time.time()
         docs = vector_store.similarity_search(question, k=k)
 
         if not docs:
-            st.warning("⚠️ No se recuperaron fragmentos.")
+            st.warning("No se recuperaron fragmentos.") 
         else:
             max_chars = 3000
             context = ""
@@ -76,6 +76,7 @@ if submitted and question.strip():
 
             st.caption(f"⏱️ Tiempo: {round(time.time() - start, 3)}s")
 
-            with st.expander("🧩 Fragmentos usados"):
-                for i, d in enumerate(docs, 1):
-                    st.markdown(f"**Fragmento {i}:**\n\n{d.page_content}")
+            st.markdown("### Fragmentos usados")
+            for i, d in enumerate(docs, 1):
+                with st.expander(f"Fragmento {i}", expanded=False):
+                    st.markdown(d.page_content)
