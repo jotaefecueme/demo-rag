@@ -8,6 +8,10 @@ from langchain.chat_models import init_chat_model
 
 load_dotenv()
 
+if not os.getenv("COHERE_API_KEY"):
+    st.error("⚠️ Falta la variable de entorno COHERE_API_KEY.")
+    st.stop()
+
 embeddings = CohereEmbeddings(
     model="embed-multilingual-v3.0",
     cohere_api_key=os.getenv("COHERE_API_KEY"),
@@ -23,42 +27,55 @@ llm = init_chat_model("meta-llama/llama-4-scout-17b-16e-instruct", model_provide
 SYSTEM_PROMPT = (
     "Eres un asistente experto en responder preguntas usando solo la información proporcionada.\n"
     "Tu misión es maximizar la utilidad al usuario, sin desviarte jamás del contexto.\n\n"
-
     "OBJETIVOS:\n"
     "1. Responder con precisión y brevedad (≤ 40 palabras).\n"
     "2. Ayudar al usuario al máximo con la información disponible.\n\n"
-
     "RESTRICCIONES:\n"
     "- No menciones la fuente, el contexto ni uses expresiones tipo “según…”, “documentación”.\n"
     "- No especules, conjetures ni inventes datos.\n"
     "- No uses saludos, despedidas ni frases de cortesía.\n"
     "- Si no hay información suficiente, responde EXACTAMENTE:\n"
     "  “No hay información disponible para responder a esta pregunta.”\n\n"
-
     "FORMATO:\n"
     "- Texto plano, máximo 40 palabras.\n"
     "- Si aportas listas o viñetas, que sean muy breves (≤ 3 ítems).\n\n"
-
     "Pregunta: {question}\n"
     "Información: {context}\n"
     "Respuesta:"
 )
 
-question = st.text_input("Introduce tu pregunta")
-k = st.slider("Fragmentos a recuperar (k)", 1, 10, 4)
+with st.form("rag_form"):
+    question = st.text_input("Pregunta")
+    k = st.slider("Fragmentos a recuperar", 1, 10, 4)
+    submitted = st.form_submit_button("Consultar")
 
-if st.button("Consultar") and question.strip():
-    with st.spinner("Buscando respuesta..."):
+if submitted and question.strip():
+    with st.spinner("🔎 Buscando respuesta..."):
         start = time.time()
         docs = vector_store.similarity_search(question, k=k)
+
         if not docs:
-            st.warning("No se recuperaron fragmentos.")
+            st.warning("⚠️ No se recuperaron fragmentos.")
         else:
-            context = "\n\n".join(d.page_content[:1000] for d in docs)
+            max_chars = 3000
+            context = ""
+            for d in docs:
+                if len(context) + len(d.page_content) <= max_chars:
+                    context += d.page_content + "\n\n"
+                else:
+                    break
+
             prompt = SYSTEM_PROMPT.format(question=question, context=context)
-            answer = llm.invoke(prompt).content
-            st.success(answer)
+
+            try:
+                answer = llm.invoke(prompt).content
+                st.success(answer)
+            except Exception as e:
+                st.error(f"Error al invocar el modelo: {str(e)}")
+                st.stop()
+
             st.caption(f"⏱️ Tiempo: {round(time.time() - start, 3)}s")
-            with st.expander("Fragmentos usados"):
-                for d in docs:
-                    st.markdown(d.page_content)
+
+            with st.expander("🧩 Fragmentos usados"):
+                for i, d in enumerate(docs, 1):
+                    st.markdown(f"**Fragmento {i}:**\n\n{d.page_content}")
