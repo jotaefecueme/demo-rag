@@ -52,7 +52,7 @@ with st.form("rag_form"):
 if submitted and question.strip():
     with st.spinner("Buscando respuesta..."): 
         start = time.time()
-        docs = vector_store.similarity_search(question, k=k)
+        docs = vector_store.max_marginal_relevance_search(query=question, k=k, fetch_k=20)
 
         if not docs:
             st.warning("No se recuperaron fragmentos.") 
